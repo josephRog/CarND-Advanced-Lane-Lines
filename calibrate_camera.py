@@ -11,34 +11,57 @@ import os, os.path # Get directory info
 DIR = './camera_cal/'
 image_names = [name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))]
 
-
-images = []
-grays = []
-rets = []
-corners = []
 nx = 9 # the number of inside corners in x
 ny = 6 # the number of inside corners in y
 
-count = 0
+
+images = []
+grays = []
+#rets = []
+#corners = []
+imgpoints = []
+objpoints = []
+
+objp = np.zeros((ny*nx,3), np.float32)
+objp[:,:2] = np.mgrid[0:nx, 0:ny].T.reshape(-1,2)
+
+
+
+
 # Read in all images
 for i in range (len(image_names)):
     filename = DIR + image_names[i]
     image = cv2.imread(DIR + image_names[i])
     images.append(image)
     grays.append(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
-    ret, corn = cv2.findChessboardCorners(grays[i], (nx, ny), None)
-    rets.append(ret)
-    corners.append(corn)
+    ret, corners = cv2.findChessboardCorners(grays[i], (nx, ny), None)
 
-    if rets[i] == True:
-        # Draw and display the corners
-        cv2.drawChessboardCorners(images[i], (nx, ny), corners[i], rets[i])
-        count += 1
+    if ret == True:
+        imgpoints.append(corners)
+        objpoints.append(objp)
+
     print(filename)
 
-print(count)
 
 
+#print(corners[2])
+
+
+
+def cal_undistort(img, objpoints, imgpoints):
+    # Use cv2.calibrateCamera() and cv2.undistort()
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, grays[2].shape[::-1], None, None)
+    dst = cv2.undistort(img, mtx, dist, None, mtx)
+    return dst
+
+
+test_image = cv2.imread('./test_images/straight_lines1.jpg')
+plt.imshow(test_image)
+plt.show()
+
+undistorted = cal_undistort(test_image, objpoints, imgpoints)
+plt.imshow(undistorted)
+plt.show()
 
 
 #ret, corners = cv2.findChessboardCorners(grays[0], (nx, ny), None)
@@ -107,6 +130,7 @@ ax1.imshow(img)
 ax1.set_title('Original Image', fontsize=50)
 ax2.imshow(img)
 '''
+'''
 # Set up subplot details
 fig, axs = plt.subplots(5,4, figsize=(16, 4))
 fig.subplots_adjust(hspace = .2, wspace=.001)
@@ -120,3 +144,4 @@ for i in range(20):
     axs[i].imshow(image, cmap='gray')
     axs[i].set_title(i)
 plt.show()
+'''
